@@ -1,0 +1,22 @@
+python-dotenv
+huggingface-hub==0.26.3
+numpy==1.26.4
+cython==3.0.0
+mpi4py==4.0.1
+polygraphy
+pycuda
+pydub
+jieba
+pypinyin
+x-transformers==1.43.5
+librosa
+onnx==1.17.0
+onnxconverter-common==1.14.0
+onnxruntime-gpu==1.20.1
+# onnxruntime-openvino
+onnxruntime-tools==1.7.0
+nvidia-pyindex
+# tensorrt==10.6.0
+# # tensorrt-cu12==10.6.0
+# # tensorrt-cu12-bindings==10.6.0
+# # tensorrt-cu12-libs==10.6.0
