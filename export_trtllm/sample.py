@@ -397,9 +397,7 @@ def main(args):
     #------------------------get input-------------------------#
     reference_audio      = "./assets/wgs-f5tts_mono.wav"
     ref_text             = "那到时候再给你打电话，麻烦你注意接听。"
-    # gen_text             = "这点请您放心，估计是我的号码被标记了，请问您是沈沈吗？"
-
-    gen_text             = "我受厦门银行委托，负责你厦门银行的信用卡业务事宜，现在厦门银行的要求是尽快解决，请问你能按时处理吗？"
+    gen_text             = "这点请您放心，估计是我的号码被标记了，请问您是沈沈吗？"
 
     # reference_audio      = "./assets/basic_ref_zh.wav"
     # ref_text             = "对，这就是我，万人敬仰的太乙真人。"
