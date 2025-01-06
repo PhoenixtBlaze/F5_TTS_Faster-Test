@@ -15,6 +15,7 @@
 
 全部`ref`见文档末尾。
 
+**模型权重**：https://huggingface.co/wgs/F5-TTS-Faster
 
 > 项目构建耗时约 **3h**, 建议在 tmux 中构建。
 
