@@ -1,23 +1,23 @@
 ## F5-TTS Tensorrt-LLM Faster
 
-为 F5-TTS 进行推理加速，测试样例如下：
+Inference acceleration for F5-TTS. A sample test is as follows:
 
 + `NVIDIA GeForce RTX 3090`
-+ 测试文本为: `这点请您放心，估计是我的号码被标记了，请问您是沈沈吗？`
++ Test text: `Please don’t worry about this. My number was probably flagged. Are you Shen Shen?`
 
-经测试，推理速度由`3.2s`降低为`0.72s`, 速度提升4倍！
+After testing, the inference time was reduced from`3.2s`to`0.72s`, achieving a 4x speed increase!
 
-基本的思路就是先将 `F5-TTS` 用 `ONNX` 导出，然后使用 `Tensorrt-LLM` 对有关 `Transformer` 部分进行加速。
+The basic approach is to first export `F5-TTS` using `ONNX` and then use `Tensorrt-LLM` to accelerate the `Transformer` components.
 
-特别感谢以下两个开源项目的贡献：
+Special thanks to the following open-source projects for their contributions:：
 + https://github.com/DakeQQ/F5-TTS-ONNX
 + https://github.com/Bigfishering/f5-tts-trtllm
 
-全部`ref`见文档末尾。
+All references are listed at the end of the documentation.
 
-**模型权重**：https://huggingface.co/wgs/F5-TTS-Faster
+**Model Weights**：https://huggingface.co/wgs/F5-TTS-Faster
 
-> 项目构建耗时约 **3h**, 建议在 tmux 中构建。
+> Project build time is approximately **3h**,  so it is recommended to build it in tmux
 
 
 ## Install
@@ -31,7 +31,7 @@ source activate f5_tts_faster
 conda install pytorch==2.5.0 torchvision==0.20.0 torchaudio==2.5.0 pytorch-cuda=12.4 -c pytorch -c nvidia -y
 ```
 
-### F5-TTS 环境
+### F5-TTS Environment
 
 ```shell
 # huggingface-cli download --resume-download SWivid/F5-TTS --local-dir ./F5-TTS/ckpts
@@ -41,18 +41,19 @@ pip install -e . -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
 ```shell
-# 修改源码加载本地的 vocoder
+# Modify the source code to load the local vocoder
 vim /home/wangguisen/miniconda3/envs/f5_tts_faster/lib/python3.10/site-packages/f5_tts/infer/infer_cli.py
-# 如果是源码安装，则在 F5-TTS/src/f5_tts/infer/infer_cli.py
-# 大约在124行，将 vocoder_local_path = "../checkpoints/vocos-mel-24khz" 注释，改为本地路径：
+# If installed from source, the file will be at: F5-TTS/src/f5_tts/infer/infer_cli.py
+# Around line 124, comment out vocoder_local_path = "../checkpoints/vocos-mel-24khz" 
+# and change it to your local path, for example:
 # vocoder_local_path = "/home/wangguisen/projects/tts/f5tts_faster/ckpts/vocos-mel-24khz"
 
-# 运行 F5-TTS 推理
+# Run F5-TTS inference
 f5-tts_infer-cli \
 --model "F5-TTS" \
 --ref_audio "./assets/wgs-f5tts_mono.wav" \
---ref_text "那到时候再给你打电话，麻烦你注意接听。" \
---gen_text "这点请您放心，估计是我的号码被标记了，请问您是沈沈吗？" \
+--ref_text "I'll call you back then, please make sure to answer." \
+--gen_text "Please don’t worry about this. My number was probably flagged. Are you Shen Shen?" \
 --vocoder_name "vocos" \
 --load_vocoder_from_local \
 --ckpt_file "./ckpts/F5TTS_Base/model_1200000.pt" \
@@ -62,53 +63,57 @@ f5-tts_infer-cli \
 ```
 
 
-### F5-TTS-Faster 环境：
+### F5-TTS-Faster Environment：
 ```shell
 conda install -c conda-forge ffmpeg cmake openmpi -y
 
-# 为 OpenMPI 设置 C 编译器, 确保安装了 ggc
+# Set the C compiler for OpenMPI, make sure gcc is installed
+# You can install compilers like this:
 # conda install -c conda-forge compilers
+# Check the path and version of gcc
 # which gcc
 # gcc --version
 export OMPI_CC=$(which gcc)
 export OMPI_CXX=$(which g++)
 
+
+# Install Python dependencies
 pip install -r ./requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
 ```python
-# 检查 onnxruntime 是否支持 CUDA
+# Check if onnxruntime supports CUDA
 import onnxruntime as ort
 print(ort.get_available_providers())
 ```
 
-### TensorRT-LLM 环境
+### TensorRT-LLM Environment
 ```shell
 sudo apt-get -y install libopenmpi-dev
 pip install tensorrt_llm==0.15.0 -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
-验证 TensorRT-LLM 环境安装是否成功：
+Verify that TensorRT-LLM is installed correctly:
 ```python
 python -c "import tensorrt_llm"
 python -c "import tensorrt_llm.bindings"
 ```
 
 
-## 转 ONNX
+##Exporting to ONNX
 
-将 `F5-TTS` 导出到 `ONNX`:
+To export `F5-TTS` to the `ONNX`format:
 
 ```python
 python ./export_onnx/Export_F5.py
 ```
 
 ```python
-# 单独以 onnx 进行推理
+# Run inference using ONNX directly
 python ./export_onnx/F5-TTS-ONNX-Inference.py
 ```
 
-导出 `ONNX` 结构如下：
+The exported ONNX model structure looks like this:
 ```shell
 ./export_onnx/onnx_ckpt/
 ├── F5_Decode.onnx
@@ -116,58 +121,59 @@ python ./export_onnx/F5-TTS-ONNX-Inference.py
 └── F5_Transformer.onnx
 ```
 
-转成 onnx 后，用 GPU 推理其实速度并没有很快，感兴趣的可以参考：
+After converting to ONNX, GPU inference isn’t super fast by default. If you're interested, try this optimization:
 ```python
-# 指定 CUDAExecutionProvider
+# Specify CUDAExecutionProvider for ONNX Runtime
 import onnxruntime as ort
 sess_options = ort.SessionOptions()
 session = ort.InferenceSession("model.onnx", providers=["CUDAExecutionProvider"], sess_options=sess_options)
 
-# 量化：
+# Quantize the ONNX model
 from onnxruntime.quantization import quantize_dynamic, QuantType
 quantize_dynamic("model.onnx", "model_quant.onnx", weight_type=QuantType.QInt8)
 ```
 
-注意：因为导出 ONNX 的时候修改了 `F5` 和 `vocos` 的源码，所以需要重新 re-download 和 re-install，才能继续保证 F5-TTS 可用。
+ Note: Since exporting to ONNX requires modifying the source code of both `F5` and `vocos` , you’ll need to re-download and re-install them to keep F5-TTS functional:
 ```shell
 pip uninstall -y vocos && pip install vocos -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 ```python
-# ./export_trtllm/origin_f5 即为 F5 对应源码
+# ./export_trtllm/origin_f5 contains the modified F5 source files
 cp ./export_trtllm/origin_f5/modules.py ../F5-TTS/src/f5_tts/model/
 cp ./export_trtllm/origin_f5/dit.py ../F5-TTS/src/f5_tts/model/backbones/
 cp ./export_trtllm/origin_f5/utils_infer.py ../F5-TTS/src/f5_tts/infer/
 ```
 
 
-## 转 Trtllm
+## Exporting to TensorRT-LLM
 
-### 源码改动
+### Source Code Changes
 
-装好 `TensorRT-LLM` 后，所以需要移动目录：
+After installing `TensorRT-LLM`, you’ll need to move some directories to integrate the model.
 
-本项目目录中 `export_trtllm/model` 对应 `Tensorrt-LLM` 源码中的 `tensorrt_llm/models`。
+the`export_trtllm/model` folder from this repo should be moved to the `tensorrt_llm/models` directory inside the TensorRT-LLM Python package.
 
-1. 在 `Tensorrt-LLM` 源码中的 `tensorrt_llm/models` 目录下新建 `f5tts` 目录，然后将 repo 中的代码放入对应的目录。
+1. First, create a new directory for `f5tts` inside `tensorrt_llm/models`, then copy the code there:
 
 ```shell
-# 查看 tensorrt_llm
+# Find the path to the installed tensorrt_llm
 ll /home/wangguisen/miniconda3/envs/f5_tts_faster/lib/python3.10/site-packages | grep tensorrt_llm
 
-# 源码 tensorrt_llm/models 导入
+# Create a directory inside the TensorRT-LLM models path
 mkdir /home/wangguisen/miniconda3/envs/f5_tts_faster/lib/python3.10/site-packages/tensorrt_llm/models/f5tts
 
+# Copy the exported model files into it
 cp -r /home/wangguisen/projects/tts/f5tts_faster/export_trtllm/model/* /home/wangguisen/miniconda3/envs/f5_tts_faster/lib/python3.10/site-packages/tensorrt_llm/models/f5tts
 ```
 
-+ `tensorrt_llm/models/f5tts` 目录如下:
++ The `tensorrt_llm/models/f5tts` directory should look like this:
 ```shell
 /home/wangguisen/miniconda3/envs/f5_tts_faster/lib/python3.10/site-packages/tensorrt_llm/models/f5tts/
 ├── model.py
 └── modules.py
 ```
 
-2. 在 `tensorrt_llm/models/__init__.py `导 `入f5tts`:
+2. Import `f5tts` in `tensorrt_llm/models/__init__.py`:
 
 ```shell
 vim /home/wangguisen/miniconda3/envs/f5_tts_faster/lib/python3.10/site-packages/tensorrt_llm/models/__init__.py
@@ -178,7 +184,7 @@ from .f5tts.model import F5TTS
 
 __all__ = [..., 'F5TTS']
 
-# 并且在 `MODEL_MAP` 添加模型：
+# Also add the model to `MODEL_MAP`:
 MODEL_MAP = {..., 'F5TTS': F5TTS}
 ```
 
@@ -193,14 +199,17 @@ python ./export_trtllm/convert_checkpoint.py \
 ```
 
 ### build engine
-> 支持Tensor 并行, --tp_size
+> Supports tensor parallelism with --tp_size
 
 ```python
 trtllm-build --checkpoint_dir ./ckpts/trtllm_ckpt \
              --remove_input_padding disable \
              --bert_attention_plugin disable \
              --output_dir ./ckpts/engine_outputs
-# 如报参数dtype不一致错误，那是因为我们默认参数是fp16，而网络参数默认需要fp32，需要在tensorrt_llm/parameter.py中将参数默认_DEFAULT_DTYPE = trt.DataType.HALF
+# If you get a data type mismatch error, it’s likely because the default parameter is fp16, but the network expects fp32. To fix this, edit tensorrt_llm/parameter.py and set the default:
+```
+```python
+_DEFAULT_DTYPE = trt.DataType.HALF
 ```
 
 ## fast inference
